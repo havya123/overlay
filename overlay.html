@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guitar Island — OBS Overlay</title>
+  <meta name="description" content="Dynamic Island style now-playing overlay for guitar livestreams: spinning vinyl, live soundwave and smooth animations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="overlay.css" />
+</head>
+<body>
+  <main class="stage" id="stage">
+    <h1 class="sr-only">Guitar Island overlay</h1>
+
+    <div class="scaler">
+      <section class="island" id="island" data-expanded="false" data-playing="false" data-visible="false" aria-live="polite">
+        <div class="core" id="core">
+          <div class="glow" aria-hidden="true"></div>
+          <div class="ring" aria-hidden="true"></div>
+
+          <div class="body">
+            <!-- Mesh-gradient backdrop, colors sampled from the cover -->
+            <div class="backdrop" id="backdrop" aria-hidden="true">
+              <span class="blob b1"></span>
+              <span class="blob b2"></span>
+              <span class="blob b3"></span>
+              <span class="blob b4"></span>
+              <div class="backdrop-shade"></div>
+            </div>
+
+            <!-- Vinyl -->
+            <div class="vinyl-wrap" id="vinylWrap">
+              <div class="vinyl" id="vinyl">
+                <div class="grooves"></div>
+                <div class="label" id="label"></div>
+                <div class="art" id="art"></div>
+                <div class="art-grooves"></div>
+                <div class="hub"></div>
+                <div class="spindle"></div>
+              </div>
+              <div class="sheen" aria-hidden="true"></div>
+              <div class="tonearm" aria-hidden="true"><span class="head"></span></div>
+            </div>
+
+            <!-- Soundwave -->
+            <div class="wave" id="wave" aria-hidden="true"></div>
+
+            <!-- Info -->
+            <div class="info" id="info">
+              <div class="title-wrap" id="titleWrap">
+                <div class="title-track" id="titleTrack">
+                  <span class="title-text" id="title"></span>
+                  <span class="title-text clone" id="titleClone" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="meta">
+                <span class="live-dot" aria-hidden="true"></span>
+                <span class="artist" id="artist"></span>
+                <span class="sep" aria-hidden="true">•</span>
+                <span class="time" id="time">00:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- "Up next" bubble, pinned under the island's bottom-left corner -->
+        <aside class="next" id="next" data-show="false" aria-label="Up next">
+          <span class="next-thumb" id="nextThumb" aria-hidden="true"></span>
+          <span class="next-label">Next</span>
+          <span class="next-text">
+            <span class="next-title" id="nextTitle"></span>
+            <span class="next-artist" id="nextArtist"></span>
+          </span>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <script src="shared.js"></script>
+  <script src="overlay.js"></script>
+</body>
+</html>

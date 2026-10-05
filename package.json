@@ -1,0 +1,10 @@
+{
+  "name": "guitar-island-overlay",
+  "version": "1.0.0",
+  "description": "Dynamic Island style now-playing overlay for OBS guitar streams",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}

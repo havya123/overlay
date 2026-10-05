@@ -1,0 +1,761 @@
+/* =========================================================
+   Guitar Island — overlay styles
+   ========================================================= */
+
+@property --ang {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* Backdrop colors — registered so they animate smoothly between songs */
+@property --c1 { syntax: '<color>'; inherits: true; initial-value: #000; }
+@property --c2 { syntax: '<color>'; inherits: true; initial-value: #000; }
+@property --c3 { syntax: '<color>'; inherits: true; initial-value: #000; }
+@property --c4 { syntax: '<color>'; inherits: true; initial-value: #000; }
+@property --base { syntax: '<color>'; inherits: true; initial-value: #000; }
+
+:root {
+  /* Theme (overridden by JS) */
+  --a1: rgb(124, 92, 255);
+  --a2: rgb(0, 224, 255);
+  --a1-rgb: 124, 92, 255;
+  --a2-rgb: 0, 224, 255;
+
+  /* Driven by JS every frame */
+  --glow: 0;
+  --ring: 0;
+
+  --scale: 0.86;
+
+  /* Geometry */
+  --cw: 176px;  --ch: 40px;  /* compact */
+  --ew: 540px;  --eh: 96px;  /* expanded */
+  --eh-next: 122px;          /* expanded + "Next" footer row */
+  --disc: 72px;              /* expanded disc size */
+  --footer: 34px;            /* height of the "Next" footer zone */
+
+  --spring: cubic-bezier(0.32, 1.42, 0.52, 1);
+  --spring-soft: cubic-bezier(0.34, 1.2, 0.64, 1);
+  --out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --font: 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Stage / positioning ---------- */
+.stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 28px;
+}
+.stage[data-pos='bottom'] { align-items: flex-end; padding: 0 0 28px; }
+.stage[data-pos='center'] { align-items: center; padding: 0; }
+
+.scaler {
+  transform: scale(var(--scale));
+  transform-origin: top center;
+}
+.stage[data-pos='bottom'] .scaler { transform-origin: bottom center; }
+.stage[data-pos='center'] .scaler { transform-origin: center; }
+
+/* ---------- Island shell ---------- */
+.island {
+  position: relative;
+  width: var(--cw);
+  height: var(--ch);
+  border-radius: 999px;
+  transition:
+    width 0.75s var(--spring),
+    height 0.75s var(--spring),
+    transform 0.6s var(--spring-soft),
+    opacity 0.45s var(--out),
+    filter 0.45s var(--out);
+}
+
+.island[data-expanded='true'] {
+  width: var(--ew);
+  height: var(--eh);
+}
+
+.island[data-expanded='true'][data-next='true'] { height: var(--eh-next); }
+
+.island[data-visible='false'] {
+  transform: scale(0.55) translateY(-6px);
+  opacity: 0;
+  filter: blur(10px);
+}
+
+.core {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* Ambient glow that breathes with the music */
+.glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--a1), var(--a2));
+  filter: blur(22px);
+  opacity: var(--glow);
+  transform: scale(calc(0.96 + var(--glow) * 0.08));
+}
+
+/* Rotating gradient rim */
+.ring {
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--ang),
+    rgba(var(--a1-rgb), 0.95),
+    rgba(var(--a2-rgb), 0.15) 25%,
+    rgba(var(--a2-rgb), 0.95) 50%,
+    rgba(var(--a1-rgb), 0.15) 75%,
+    rgba(var(--a1-rgb), 0.95)
+  );
+  opacity: var(--ring);
+  animation: spin-rim 6s linear infinite;
+}
+
+@keyframes spin-rim {
+  to { --ang: 360deg; }
+}
+
+.body {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 32px rgba(0, 0, 0, 0.5);
+  transition: padding 0.75s var(--spring), gap 0.75s var(--spring);
+}
+
+/* Disc sits concentric with the island's left curve: padding = height/2 - disc/2 */
+.island[data-expanded='true'] .body {
+  padding: 0 24px 0 calc(var(--eh) / 2 - var(--disc) / 2);
+  gap: 18px;
+}
+.island[data-expanded='true'][data-next='true'] .body {
+  padding-left: calc(var(--eh-next) / 2 - var(--disc) / 2);
+}
+
+/* Hairline between the main row and the "Next" footer (under wave + info only) */
+.body::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: calc(var(--eh-next) / 2 + var(--disc) / 2 + 18px);
+  right: 28px;
+  bottom: var(--footer);
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.06) 70%, transparent);
+  opacity: 0;
+  transform: scaleX(0.6);
+  transform-origin: left;
+  transition: opacity 0.3s var(--out), transform 0.5s var(--out);
+}
+.island[data-expanded='true'][data-next='true'] .body::after {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s var(--out) 0.3s, transform 0.7s var(--out) 0.3s;
+}
+
+/* Content sits above the blurred backdrop */
+.body > :not(.backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Mesh-gradient backdrop (colors from the cover) ---------- */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--base);
+  opacity: 0;
+  transition:
+    opacity 0.9s var(--out),
+    --c1 1.6s ease, --c2 1.6s ease, --c3 1.6s ease, --c4 1.6s ease, --base 1.6s ease;
+}
+
+.backdrop.on { opacity: 0.35; }
+.island[data-expanded='true'] .backdrop.on { opacity: 0.8; }
+
+.blob {
+  position: absolute;
+  top: 50%;
+  width: 50%;
+  aspect-ratio: 1;
+  margin-top: -25%; /* % of width → vertically centered circle */
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  opacity: 0.65;
+  will-change: transform;
+}
+
+.b1 { left: -16%; background: radial-gradient(closest-side, var(--c1), transparent); animation: blob-a 17s ease-in-out -3s infinite alternate; }
+.b2 { left: 14%;  background: radial-gradient(closest-side, var(--c2), transparent); animation: blob-b 21s ease-in-out -8s infinite alternate; }
+.b3 { left: 40%;  background: radial-gradient(closest-side, var(--c3), transparent); animation: blob-a 19s ease-in-out -12s infinite alternate-reverse; }
+.b4 { left: 66%;  background: radial-gradient(closest-side, var(--c4), transparent); animation: blob-b 23s ease-in-out -5s infinite alternate-reverse; }
+
+@keyframes blob-a {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(16%, -12%) scale(1.15); }
+  100% { transform: translate(-10%, 10%) scale(0.9); }
+}
+
+@keyframes blob-b {
+  0%   { transform: translate(0, 0) scale(1.05); }
+  50%  { transform: translate(-14%, 10%) scale(0.92); }
+  100% { transform: translate(12%, -8%) scale(1.12); }
+}
+
+/* Soft top sheen + inner vignette so the edge melts into the black rim,
+   and a gentle darkening behind the text on the right */
+.backdrop-shade {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 45%),
+    linear-gradient(90deg, transparent 55%, rgba(0, 0, 0, 0.32));
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.75);
+}
+
+/* Very light grain to prevent banding in dark gradients */
+.backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Vinyl ---------- */
+.vinyl-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  transition: width 0.75s var(--spring), height 0.75s var(--spring);
+}
+
+.island[data-expanded='true'] .vinyl-wrap {
+  width: var(--disc);
+  height: var(--disc);
+}
+
+.vinyl {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #0b0b0d;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 4px 14px rgba(0, 0, 0, 0.7);
+  will-change: transform;
+}
+
+.grooves {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    /* accent ring in the grooves */
+    radial-gradient(circle,
+      transparent 0 62%,
+      rgba(var(--a1-rgb), 0.35) 63%,
+      transparent 64.5%,
+      transparent 80%,
+      rgba(var(--a2-rgb), 0.18) 81%,
+      transparent 82.5%),
+    /* fine grooves */
+    repeating-radial-gradient(circle,
+      #0d0d10 0 1px,
+      #1a1a1f 1px 2px),
+    #0b0b0d;
+}
+
+.label {
+  position: absolute;
+  inset: 31%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+/* Marker wedge so the rotation is clearly visible */
+.label::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    rgba(255, 255, 255, 0.55) 0deg 28deg,
+    transparent 28deg 180deg,
+    rgba(0, 0, 0, 0.28) 180deg 208deg,
+    transparent 208deg
+  );
+}
+
+/* ---------- Cover art on the disc ---------- */
+.art,
+.art-grooves,
+.hub {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.5s var(--out);
+}
+
+.art {
+  inset: 0;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Vinyl texture over the artwork */
+.art-grooves {
+  inset: 0;
+  background:
+    /* edge vignette — reads as a round record, not a sticker */
+    radial-gradient(circle, transparent 0 58%, rgba(0, 0, 0, 0.18) 72%, rgba(0, 0, 0, 0.55) 100%),
+    /* a couple of track gaps */
+    radial-gradient(circle,
+      transparent 0 52%,
+      rgba(0, 0, 0, 0.35) 53%,
+      transparent 54.5%,
+      transparent 75%,
+      rgba(0, 0, 0, 0.3) 76%,
+      transparent 77.5%),
+    /* fine grooves */
+    repeating-radial-gradient(circle,
+      rgba(0, 0, 0, 0.16) 0 1px,
+      transparent 1px 2.5px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Small dark center ring around the spindle */
+.hub {
+  inset: 39%;
+  background: radial-gradient(circle, #111 0 55%, #000 56% 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.vinyl-wrap.has-cover .art,
+.vinyl-wrap.has-cover .art-grooves,
+.vinyl-wrap.has-cover .hub { opacity: 1; }
+
+.vinyl-wrap.has-cover .label { opacity: 0; }
+
+.vinyl-wrap.has-cover .sheen {
+  -webkit-mask: radial-gradient(circle, transparent 0 39%, #000 40%);
+          mask: radial-gradient(circle, transparent 0 39%, #000 40%);
+}
+
+.spindle {
+  position: absolute;
+  inset: 45.5%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #000 0 40%, #cfd2d8 42% 70%, #8a8d94 72%);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Fixed light reflection (does NOT rotate — looks like real vinyl) */
+.sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 20deg,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.16) 30deg,
+    transparent 65deg,
+    transparent 195deg,
+    rgba(255, 255, 255, 0.10) 225deg,
+    transparent 260deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 0 31%, #000 32%);
+          mask: radial-gradient(circle, transparent 0 31%, #000 32%);
+}
+
+/* Tonearm */
+.tonearm {
+  position: absolute;
+  top: -4px;
+  right: -7px;
+  width: 3px;
+  height: 42px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #8d9098, #f2f3f5 50%, #9a9da5);
+  transform-origin: 50% 4px;
+  transform: rotate(-16deg);
+  opacity: 0;
+  transition:
+    transform 0.7s var(--spring-soft),
+    opacity 0.3s var(--out),
+    height 0.75s var(--spring);
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.tonearm::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff, #9ea1a8 60%, #5d6067);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.tonearm .head {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  width: 6px;
+  height: 9px;
+  margin-left: -3px;
+  border-radius: 1.5px;
+  background: linear-gradient(180deg, #e9eaee, #7f828a);
+  transform: rotate(18deg);
+}
+
+.island[data-expanded='true'] .tonearm {
+  opacity: 1;
+  height: 49px;
+  transition-delay: 0s, 0.15s, 0s;
+}
+
+.island[data-playing='true'] .tonearm {
+  transform: rotate(20deg);
+}
+
+/* ---------- Soundwave ---------- */
+.wave {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  overflow: hidden;
+  transition: height 0.75s var(--spring), margin-bottom 0.75s var(--spring);
+  -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+          mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+}
+
+.island[data-expanded='true'] .wave {
+  height: 48px;
+}
+
+/* With the footer: wave + info move up into the main zone (the disc stays centered) */
+.island[data-expanded='true'][data-next='true'] .wave,
+.island[data-expanded='true'][data-next='true'] .info {
+  margin-bottom: var(--footer);
+}
+
+.bar {
+  flex: 0 0 auto;
+  width: 3px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--a1);
+  transition: background-color 0.9s ease, box-shadow 0.9s ease;
+}
+
+.island[data-expanded='true'] .bar { width: 4px; }
+
+/* ---------- Info ---------- */
+.info {
+  flex: 0 0 auto;
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateX(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  transition:
+    width 0.75s var(--spring),
+    opacity 0.3s var(--out),
+    filter 0.3s var(--out),
+    transform 0.5s var(--out),
+    margin-bottom 0.75s var(--spring);
+}
+
+.island[data-expanded='true'] .info {
+  width: 168px;
+  opacity: 1;
+  filter: blur(0);
+  transform: none;
+  transition-delay: 0s, 0.22s, 0.22s, 0.22s, 0s;
+}
+
+.title-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.title-wrap.marquee {
+  -webkit-mask: linear-gradient(90deg, transparent, #000 6px, #000 calc(100% - 14px), transparent);
+          mask: linear-gradient(90deg, transparent, #000 6px, #000 calc(100% - 14px), transparent);
+}
+
+.title-track {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.title-text {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.title-text.clone { display: none; }
+
+.marquee .title-text { padding-right: 40px; }
+.marquee .title-text.clone { display: inline; }
+.marquee .title-track { animation: marquee var(--marquee-dur, 10s) linear infinite; }
+
+@keyframes marquee {
+  0%, 18% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.sep { opacity: 0.5; }
+
+.time {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.75);
+  flex: 0 0 auto;
+}
+
+.live-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background 0.3s;
+}
+
+.island[data-playing='true'] .live-dot {
+  background: var(--a2);
+  animation: pulse 1.6s ease-out infinite;
+}
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(var(--a2-rgb), 0.7); }
+  70%  { box-shadow: 0 0 0 7px rgba(var(--a2-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--a2-rgb), 0); }
+}
+
+/* Song swap animation */
+.info.swap .title-wrap,
+.info.swap .meta {
+  animation: swap-in 0.6s var(--out) both;
+}
+.info.swap .meta { animation-delay: 0.06s; }
+
+@keyframes swap-in {
+  from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* ---------- "Up next" bubble (small, under the island's bottom-left) ---------- */
+.next {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  width: max-content; /* don't shrink to the compact island's width */
+  max-width: 240px;
+  padding: 0 10px 0 3px;
+  border-radius: 999px;
+  background: #000;
+  color: #fff;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 6px 16px rgba(0, 0, 0, 0.4);
+  /* hidden: tucked under the island */
+  opacity: 0;
+  transform: translateY(-10px) scale(0.6);
+  filter: blur(5px);
+  transform-origin: top left;
+  transition:
+    opacity 0.3s var(--out),
+    transform 0.5s var(--out),
+    filter 0.3s var(--out),
+    max-width 0.75s var(--spring),
+    top 0.75s var(--spring),
+    bottom 0.75s var(--spring),
+    left 0.75s var(--spring),
+    background-color 0.5s var(--out),
+    box-shadow 0.5s var(--out);
+  pointer-events: none;
+}
+
+.next[data-show='true'] {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+  transition:
+    opacity 0.4s var(--out) 0.25s,
+    transform 0.7s var(--spring) 0.25s,
+    filter 0.4s var(--out) 0.25s,
+    max-width 0.75s var(--spring),
+    top 0.75s var(--spring),
+    bottom 0.75s var(--spring),
+    left 0.75s var(--spring),
+    background-color 0.5s var(--out),
+    box-shadow 0.5s var(--out);
+}
+
+/* Collapsed island → keep the bubble narrower than the island itself */
+.island[data-expanded='false'] .next { max-width: calc(var(--cw) - 28px); }
+.island[data-expanded='false'] .next-artist { display: none; }
+
+/* Expanded island → the bubble becomes the footer row, under the wave + info columns */
+.island[data-expanded='true'] .next {
+  --next-left: calc(var(--eh-next) / 2 + var(--disc) / 2 + 18px - 3px);
+  top: calc(100% - var(--footer) / 2 - 11px);
+  left: var(--next-left);
+  max-width: calc(var(--ew) - var(--next-left) - 28px);
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* Island at the bottom of the screen → bubble sits above its top-left corner */
+.stage[data-pos='bottom'] .next {
+  top: auto;
+  bottom: calc(100% + 6px);
+  transform-origin: bottom left;
+  transform: translateY(10px) scale(0.6);
+}
+.stage[data-pos='bottom'] .next[data-show='true'] { transform: none; }
+.stage[data-pos='bottom'] .island[data-expanded='true'] .next { bottom: calc(var(--footer) / 2 - 11px); }
+
+/* Mini record: cover art (or accent gradient) with a center hole */
+.next-thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  animation: spin-thumb 6s linear infinite;
+  animation-play-state: paused;
+}
+.next-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #000 0 14%, transparent 16%),
+    radial-gradient(circle, transparent 0 55%, rgba(0, 0, 0, 0.45) 100%);
+}
+.island[data-playing='true'] .next-thumb { animation-play-state: running; }
+
+@keyframes spin-thumb { to { transform: rotate(360deg); } }
+
+.next-label {
+  flex: 0 0 auto;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--a2);
+  transition: color 0.9s ease;
+}
+
+.next-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10.5px;
+  line-height: 1;
+}
+
+.next-title { font-weight: 600; color: #fff; }
+
+.next-artist { font-weight: 500; color: rgba(255, 255, 255, 0.5); }
+.next-artist:not(:empty)::before { content: '·'; margin: 0 4px; opacity: 0.7; }
+
+/* Next song changed while visible */
+.next.swap .next-text { animation: swap-in 0.6s var(--out) both; }

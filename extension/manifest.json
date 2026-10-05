@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Guitar Island — YouTube Sync",
+  "version": "0.1.0",
+  "description": "Đồng bộ video YouTube đang chọn với Guitar Island overlay.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://www.youtube.com/*", "http://localhost:7777/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Guitar Island YouTube Sync",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "content_scripts": [{
+    "matches": ["https://www.youtube.com/*"],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }]
+}

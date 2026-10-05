@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#07070b" />
+  <title>Guitar Island — Bảng điều khiển</title>
+  <meta name="description" content="Control panel for the Guitar Island OBS overlay: play/pause the spinning vinyl, set song info, manage your setlist and theme." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="control.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+  </div>
+
+  <main class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <span class="brand-disc" aria-hidden="true"></span>
+        <h1>Guitar Island</h1>
+      </div>
+      <span class="status" id="status" data-state="local">
+        <span class="status-dot"></span>
+        <span id="statusText">Cục bộ</span>
+      </span>
+    </header>
+
+    <!-- Preview -->
+    <section class="card preview-card" aria-label="Xem trước">
+      <iframe id="preview" class="preview" title="Xem trước overlay" src="overlay.html?preview&pos=center&scale=0.7"></iframe>
+    </section>
+
+    <!-- Transport -->
+    <section class="card transport" aria-label="Điều khiển phát">
+      <button class="play-btn" id="playBtn" aria-label="Phát / Tạm dừng" title="Phát / Tạm dừng (Space)">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path class="icon-play" d="M8 5.5v13a1 1 0 0 0 1.52.85l10.4-6.5a1 1 0 0 0 0-1.7L9.52 4.65A1 1 0 0 0 8 5.5z" />
+          <g class="icon-pause">
+            <rect x="6.5" y="5" width="4" height="14" rx="1.4" />
+            <rect x="13.5" y="5" width="4" height="14" rx="1.4" />
+          </g>
+        </svg>
+      </button>
+
+      <div class="transport-info">
+        <span class="transport-state" id="stateText">Tạm dừng</span>
+        <span class="transport-source" id="sourceText">Thủ công</span>
+        <span class="transport-time" id="timeText">00:00</span>
+      </div>
+
+      <div class="transport-actions">
+        <button class="icon-btn" id="nextBtn" title="Bài tiếp theo (N)" aria-label="Chuyển sang bài tiếp theo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17.2V6.8a1 1 0 0 1 1.57-.82l7.4 5.2a1 1 0 0 1 0 1.64l-7.4 5.2A1 1 0 0 1 6 17.2zM16.5 6h1.5a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-1.5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z" /></svg>
+        </button>
+        <button class="icon-btn" id="resetBtn" title="Đặt lại thời gian" aria-label="Đặt lại thời gian">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" /></svg>
+        </button>
+        <button class="icon-btn" id="visibleBtn" title="Ẩn / hiện island" aria-label="Ẩn / hiện island">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="eye-on"><path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z" /></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="eye-off"><path d="M3.3 2.3 2 3.6l3.2 3.2C3.5 8.2 2.5 10 2 12c1 2.5 5 7 10 7 1.8 0 3.4-.5 4.8-1.3l3.6 3.6 1.3-1.3L3.3 2.3zM12 16a4 4 0 0 1-3.9-4.9l4.8 4.8c-.3.1-.6.1-.9.1zm0-11c-1.3 0-2.6.3-3.7.8l2 2A4 4 0 0 1 16 12c0 .6-.1 1.2-.4 1.7l3.1 3.1c1.6-1.3 2.8-3 3.3-4.8-1-2.5-5-7-10-7z" /></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Song -->
+    <section class="card" aria-labelledby="songHeading">
+      <h2 id="songHeading" class="card-title">Bài hát</h2>
+      <form id="songForm" class="form" autocomplete="off">
+        <div class="field">
+          <label for="titleInput" class="field-label">
+            Tên bài
+            <small class="auto-hint">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.8L20 9.7l-5 3.6 1.9 5.9L12 15.6l-4.9 3.6L9 13.3 4 9.7l6.1-1.9z" /></svg>
+              Gõ để tự tìm nghệ sĩ &amp; ảnh bìa
+            </small>
+          </label>
+          <div class="suggest-wrap">
+            <input id="titleInput" type="text" maxlength="80" placeholder="VD: Wonderwall, Hotel California, Ngày mai em đi…"
+              role="combobox" aria-autocomplete="list" aria-controls="suggestList" aria-expanded="false" spellcheck="false" />
+            <span class="suggest-spinner" id="suggestSpinner" aria-hidden="true"></span>
+            <ul class="suggest" id="suggestList" role="listbox" aria-label="Gợi ý bài hát" hidden></ul>
+          </div>
+        </div>
+        <label class="field">
+          <span>Nghệ sĩ / ghi chú</span>
+          <input id="artistInput" type="text" maxlength="60" placeholder="VD: Oasis · Fingerstyle" />
+        </label>
+        <div class="field">
+          <span>Ảnh bìa</span>
+          <div class="cover-picker" id="coverDrop">
+            <div class="cover-thumb" id="coverThumb" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" /></svg>
+            </div>
+            <div class="cover-main">
+              <div class="cover-buttons">
+                <button type="button" class="chip" id="searchCoverBtn">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2a8 8 0 0 1 6.32 12.9l5.39 5.4-1.41 1.4-5.4-5.38A8 8 0 1 1 10 2zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12z" /></svg>
+                  Tìm tự động
+                </button>
+                <button type="button" class="chip" id="uploadBtn">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 16V7.8l-3.6 3.6L6 10l6-6 6 6-1.4 1.4L13 7.8V16h-2zm-7 4v-4h2v2h12v-2h2v4H4z" /></svg>
+                  Tải ảnh lên
+                </button>
+                <button type="button" class="chip danger" id="clearCoverBtn" aria-label="Xóa ảnh bìa" title="Xóa ảnh bìa">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4z" /></svg>
+                </button>
+              </div>
+              <input id="coverInput" type="text" inputmode="url" placeholder="Dán link ảnh, Ctrl+V ảnh hoặc kéo thả vào đây" />
+            </div>
+            <input type="file" id="fileInput" accept="image/*" hidden />
+            <div class="drop-hint" aria-hidden="true">Thả ảnh vào đây</div>
+          </div>
+          <div class="cover-results" id="coverResults" hidden></div>
+        </div>
+        <div class="row">
+          <button type="submit" class="btn primary" id="applyBtn">Cập nhật</button>
+          <button type="button" class="btn ghost" id="saveBtn">+ Lưu vào setlist</button>
+          <button type="button" class="btn ghost" id="linkYouTubeBtn" hidden>Gắn video YouTube</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Setlist -->
+    <section class="card" aria-labelledby="setlistHeading">
+      <div class="card-head">
+        <h2 id="setlistHeading" class="card-title">Setlist</h2>
+        <span class="hint" id="setlistHint">Bấm để chuyển bài · kéo ⋮⋮ để sắp xếp</span>
+      </div>
+      <div class="setlist-tools">
+        <label class="setlist-search" for="setlistSearch">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 1 0 4.7 13.35l4.72 4.72 1.42-1.42-4.72-4.72A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"/></svg>
+          <input id="setlistSearch" type="search" placeholder="Tìm bài hoặc nghệ sĩ" autocomplete="off" />
+          <button type="button" id="clearSetlistSearch" aria-label="Xóa tìm kiếm" title="Xóa tìm kiếm" hidden>×</button>
+        </label>
+        <span class="setlist-count" id="setlistCount"></span>
+      </div>
+      <ul class="setlist" id="setlist"></ul>
+      <p class="empty" id="setlistEmpty">Chưa có bài nào. Nhập tên bài rồi bấm “Lưu vào setlist”.</p>
+      <nav class="setlist-pages" id="setlistPages" aria-label="Phân trang setlist" hidden>
+        <button type="button" class="icon-btn small-page" id="setlistPrev" aria-label="Trang trước">‹</button>
+        <span id="setlistPageText"></span>
+        <button type="button" class="icon-btn small-page" id="setlistNext" aria-label="Trang sau">›</button>
+      </nav>
+      <label class="switch-row setlist-switch" for="syncEnabled">
+        <span>
+          <b>Đồng bộ YouTube</b>
+          <small>Extension đang kết nối sẽ tự cập nhật bài hát, trạng thái và thời lượng</small>
+        </span>
+        <input type="checkbox" id="syncEnabled" class="switch" checked />
+      </label>
+      <label class="switch-row setlist-switch" for="showNext">
+        <span>
+          <b>Hiện “Next” trên overlay</b>
+          <small>Bong bóng nhỏ ở góc dưới bên trái island, báo bài kế tiếp trong setlist</small>
+        </span>
+        <input type="checkbox" id="showNext" class="switch" />
+      </label>
+    </section>
+
+    <!-- Appearance -->
+    <section class="card" aria-labelledby="lookHeading">
+      <h2 id="lookHeading" class="card-title">Giao diện</h2>
+
+      <div class="group">
+        <span class="group-label">Màu chủ đạo</span>
+        <label class="switch-row" for="autoColor">
+          <span>
+            <b>Màu theo ảnh bìa</b>
+            <small>Glow, viền và soundwave lấy màu từ ảnh bìa bài hát</small>
+          </span>
+          <input type="checkbox" id="autoColor" class="switch" />
+        </label>
+        <div class="swatches" id="swatches" role="radiogroup" aria-label="Màu chủ đạo"></div>
+      </div>
+
+      <div class="group">
+        <span class="group-label">Soundwave</span>
+        <div class="segmented" id="modeSeg" role="radiogroup" aria-label="Nguồn soundwave">
+          <button type="button" data-mode="sim" role="radio">Giả lập</button>
+          <button type="button" data-mode="mic" role="radio">Micro thật</button>
+          <span class="seg-thumb" aria-hidden="true"></span>
+        </div>
+        <p class="note" id="micNote">
+          Micro thật cần thêm tham số <code>--enable-media-stream</code> vào shortcut OBS. Không có thì overlay tự quay về chế độ giả lập.
+        </p>
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="card" aria-labelledby="linksHeading">
+      <h2 id="linksHeading" class="card-title">Link cho OBS</h2>
+      <div class="link-row">
+        <code id="overlayUrl"></code>
+        <button class="btn small" data-copy="overlayUrl">Copy</button>
+      </div>
+      <p class="note">Browser Source: rộng <b>800</b> × cao <b>200</b>. Thêm <code>?pos=bottom</code> hoặc <code>&amp;scale=1.3</code> nếu cần.</p>
+    </section>
+
+    <p class="kbd-hint"><kbd>Space</kbd> phát / tạm dừng · <kbd>N</kbd> bài tiếp theo</p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="shared.js"></script>
+  <script src="control.js"></script>
+</body>
+</html>
