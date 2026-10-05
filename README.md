@@ -45,6 +45,43 @@ Không cần cài thư viện nào (chỉ cần Node.js).
 
 Overlay có thể tự cập nhật theo video YouTube đang mở, bao gồm tên bài, kênh/nghệ sĩ, thumbnail, play/pause, seek và thời lượng thật.
 
+### Công nghệ lấy dữ liệu YouTube
+
+Extension Chrome/Edge được viết bằng **JavaScript**, dùng **Manifest V3**. Content script chạy trong trang YouTube để đọc thông tin từ HTML (**DOM scraping**) và trạng thái của thẻ `<video>` qua **HTMLMediaElement API**. Cơ chế này không cần YouTube Data API hoặc API key.
+
+| Dữ liệu | Cách lấy |
+|---|---|
+| Tên video | Đọc tiêu đề trên trang bằng `document.querySelector()`, dùng `document.title` làm dự phòng |
+| Kênh/nghệ sĩ | Đọc tên kênh từ HTML; trường nghệ sĩ hiện tại là tên kênh YouTube |
+| ID video | Đọc tham số `v` trong URL của trang |
+| Ảnh bìa | Ghép URL `https://i.ytimg.com/vi/{videoId}/hqdefault.jpg` |
+| Vị trí phát, thời lượng, tốc độ | Đọc `currentTime`, `duration`, `playbackRate` của thẻ `<video>` |
+| Trạng thái phát | Đọc `paused`, `ended` và lắng nghe sự kiện `play`, `pause`, `seeked`, `ended`, `ratechange` |
+
+Content script dùng `MutationObserver` và kiểm tra mỗi 500 ms để nhận biết khi trang đổi video hoặc thay thẻ `<video>`. Dữ liệu được gửi khi có sự kiện phát/tua/dừng, khi vị trí phát thay đổi và định kỳ mỗi 2 giây. Service worker chỉ chuyển dữ liệu của tab đã được người dùng kết nối đến server.
+
+Luồng đồng bộ:
+
+```text
+Tab YouTube: content script đọc HTML và thẻ <video>
+  → chrome.runtime.sendMessage()
+  → Service worker của extension
+  → HTTP POST JSON đến /api/youtube/sync trên server Node.js
+  → Server-Sent Events (SSE) qua /api/events
+  → Overlay và bảng điều khiển cập nhật giao diện
+```
+
+Các phần triển khai chính:
+
+- [extension/content.js](extension/content.js): đọc dữ liệu và theo dõi video.
+- [extension/background.js](extension/background.js): quản lý tab kết nối và gửi dữ liệu đến server bằng `fetch()`.
+- [server.js](server.js): nhận dữ liệu YouTube, cập nhật trạng thái và phát cập nhật qua SSE.
+- [shared.js](shared.js): nhận cập nhật bằng `EventSource` để đồng bộ overlay và bảng điều khiển.
+
+Cách này theo dõi được trạng thái phát thực tế của tab đang mở. Các bộ chọn HTML lấy tiêu đề và tên kênh có thể cần cập nhật khi YouTube thay đổi giao diện.
+
+### Thiết lập đồng bộ
+
 1. Chạy server: `node server.js`.
 2. (Khuyến nghị khi điều khiển qua LAN) chạy với token: `OVERLAY_TOKEN=mat-khau-cua-ban node server.js`.
 3. Mở `chrome://extensions` hoặc `edge://extensions`, bật **Developer mode**, chọn **Load unpacked** và chọn thư mục `extension/`.
